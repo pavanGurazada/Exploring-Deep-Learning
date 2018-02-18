@@ -40,3 +40,7 @@ function hoeffding_experiment(n_coins::Int, n_tosses::Int, n_repeats::Int)
 end
 
 @time result = hoeffding_experiment(1000, 10, 10^5)
+
+histogram(result[1:end, 1])
+histogram(result[1:end, 2])
+histogram(result[1:end, 3])
