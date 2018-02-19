@@ -47,7 +47,7 @@ plot(x, f(x), label = "Truth")
 plot!(x, predict.(m, x), label = "Predicted")
 
 # It is bad, but how bad?
-# Let us define a root mean square error (RMSE)
+# Let us define a mean square error (MSE)
 function mse(m::LinearModel, x::Vector{T}, y::Vector{T}) where T <: Real
     predicted = predict.(m, x)
     return mean((y .- predicted))^2
@@ -78,7 +78,8 @@ m = LinearModel()
 models = LinearModel[deepcopy(m)] # create an array of linear models
 xys = [(x, f(x)) for x in rand(17)] # sample data
 
-# Gradient descent
+# Gradient descent, we take the signal from the gradient to check the direction
+# to step to from the current position
 
 for _ in 1:128
     m.w -= mu * gradient_mse(m, xys)
