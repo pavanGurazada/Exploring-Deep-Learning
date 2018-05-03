@@ -67,14 +67,22 @@ y_test <- as.numeric(test_labels)
 #' There are two key decisions one makes in the construction of a multilayer
 #' perceptron like the one we are building here. We need to decide how many
 #' hidden layers to use and how many neurons per layer.
+#'
+#' There are broadly three steps - one, build a layered representation of your
+#' fancy; two, compile the model (in place) by giving the loss, optimizer and
+#' metrics arguments; three, fit the compiled model to data, which returns a
+#' history object
 
-model <- keras_model_sequential() %>% 
+keras_model_sequential() %>% 
   layer_dense(units = 16, activation = "relu", input_shape = c(10000)) %>% 
   layer_dense(units = 16, activation = "relu") %>% 
-  layer_dense(units = 1, activation = "sigmoid") %>% 
-  compile(optimizer = optimizer_rmsprop(lr = 0.001),
-          loss = loss_binary_crossentropy,
-          metrics = metric_binary_accuracy)
+  layer_dense(units = 1, activation = "sigmoid") ->
+  model  
+
+compile(model,
+        optimizer = optimizer_rmsprop(lr = 0.001),
+        loss = loss_binary_crossentropy,
+        metrics = metric_binary_accuracy)
 
 val_indices <- 1:10^4
 
