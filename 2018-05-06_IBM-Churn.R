@@ -5,12 +5,14 @@
 #' ---
 
 library(keras)
+library(onehot)
 library(rsample)
 library(recipes)
 library(corrr)
 library(yardstick)
 library(tidyverse)
 library(ggthemes)
+library(caret)
 
 theme_set(theme_few())
 
@@ -378,3 +380,104 @@ estimates_mlp <- data.frame(truth = as.factor(y_test) %>% fct_recode(yes = "1", 
 
 conf_mat(estimates_mlp, truth, estimate)
 roc_auc(estimates_mlp, truth, class_prob)
+
+#' *Additional analysis*
+#' One variable we engineered before starting the analysis is to divide tenure
+#' into 6 bins. One point to ponder is whether this had a significant impact on
+#' what the neural network could learn. Lets see if we instead increased this to
+#' the actual number of unique values of tenure in the data. Does this increase
+#' the performance of the neural network?
+#' 
+#' To do this we manually one-hot encode all the features.
+
+glimpse(train_tbl)
+
+train_tbl %>% select(-Churn, -MonthlyCharges, -TotalCharges) %>% 
+              mutate_all(as.factor) -> 
+              train_fct
+
+encoder <- onehot(train_fct, max_levels = 75)
+train_fct <- predict(encoder, train_fct)
+
+train_df <- cbind(train_fct, select(train_tbl, Churn, MonthlyCharges, TotalCharges)) %>% 
+                select(Churn, everything()) %>% 
+                mutate(Churn = ifelse(Churn == "Yes", 1, 0))
+
+train_df %>% 
+  select(-Churn) %>% 
+  scale() %>% 
+  as.matrix() ->
+  x_train
+
+y_train <- ifelse(pull(train_tbl, Churn) == "Yes", 1, 0)
+y_test <- ifelse(pull(test_tbl, Churn) == "Yes", 1, 0)
+
+#' Let us fit the best model from before to this data with higher dimensions
+
+k_clear_session()
+
+model_10h <- keras_model_sequential() %>% 
+  layer_dense(units = 24, 
+              activation = 'relu', 
+              input_shape = ncol(x_train)) %>% # layer 1
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 2
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 3
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 4
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 5
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 6
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 7
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 8
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 9
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 24, 
+              activation = 'relu') %>% # layer 10
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 1, 
+              activation = 'sigmoid')
+
+compile(model_10h, 
+        optimizer = 'adam',
+        loss = 'binary_crossentropy',
+        metrics = c('accuracy'))
+
+history_10h <- fit(model_10h, x_train, y_train,
+                  epochs = 20,
+                  batch_size = 10,
+                  validation_split = 0.2)
+
