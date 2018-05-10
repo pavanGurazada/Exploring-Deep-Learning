@@ -1,22 +1,15 @@
 #' ---
-#' title: "Checking LIME with deep learning"
+#' title: "Plotting the ROC"
 #' author: Pavan Gurazada
 #' output: github_document
 #' ---
-#' last update: Thu May 10 07:34:08 2018
-
-#' ---
-#' title: "Managing workflow with tfruns "
-#' author: Pavan Gurazada
-#' output: github_document
-#' ---
-#' last update: Wed May 09 16:16:44 2018
+#' last update: Thu May 10 16:04:05 2018
 
 library(keras)
-library(lime)
+library(pROC)
 library(rsample)
 library(recipes)
-library(corrr)
+library(yardstick)
 library(tidyverse)
 library(ggthemes)
 
@@ -104,3 +97,26 @@ history <- fit(model, x_train, y_train,
                validation_split = 0.2)
 
 k_clear_session()
+
+yhat_class <- predict_classes(object = model, 
+                              x = x_test) %>% as.vector()
+
+yhat_probs <- predict_proba(object = model,
+                            x = x_test) %>% as.vector()
+
+estimates_test <- data.frame(truth = as.factor(y_test),
+                             estimate = as.factor(yhat_class),
+                             class_prob = yhat_probs)
+
+#' For most cases the following metrics from the yardstick package are enough
+#' to guage the model, especially using the AUC, that accounts for the entire 
+#' range of threshold possible given the data
+ 
+conf_mat(estimates_test, truth, estimate)
+metrics(estimates_test, truth , estimate)
+roc_auc(estimates_test, truth, class_prob)
+
+#' Plotting a ROC curve is also beneficial to check the AUC
+
+dev.new()
+plot(roc(estimates_test$truth, estimates_test$class_prob)) 
