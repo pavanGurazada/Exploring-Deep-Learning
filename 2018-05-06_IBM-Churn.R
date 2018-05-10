@@ -481,3 +481,44 @@ history_10h <- fit(model_10h, x_train, y_train,
                   batch_size = 10,
                   validation_split = 0.2)
 
+#' The next step iis to see if the hyperparameter tuning within the compilation
+#' step changes the accuracy
+#' 
+#' Lets take the best so far and tune
+
+k_clear_session()
+
+model_4h <- keras_model_sequential() %>% 
+  layer_dense(units = 16, 
+              activation = 'relu', 
+              input_shape = ncol(x_train)) %>% # layer 1
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 16, 
+              activation = 'relu') %>% # layer 2
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 16, 
+              activation = 'relu') %>% # layer 3
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 16, 
+              activation = 'relu') %>% # layer 4
+  
+  layer_dropout(rate = 0.2) %>% 
+  
+  layer_dense(units = 1, 
+              activation = 'sigmoid')
+
+compile(model_4h, 
+        optimizer = optimizer_adam(lr = 0.005),
+        loss = 'binary_crossentropy',
+        metrics = c('accuracy'))
+
+history_4h <- fit(model_4h, x_train, y_train,
+                  epochs = 20,
+                  batch_size = 100, 
+                  validation_split = 0.2)
